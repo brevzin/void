@@ -1,5 +1,7 @@
 # Regular Void: The Library
 
+![Tests](https://github.com/brevzin/void/actions/workflows/main.yml/badge.svg)
+
 [P0146](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2016/p0146r1.html) describes the issue at hand pretty well: in generic code, we often want to deal with functions that can return any type - and we don't actually care what that type is. Example from the paper:
 
 ```cpp

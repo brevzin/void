@@ -92,7 +92,15 @@ using wrap_void = detail::if_c<std::is_void_v<T>, Void, T>;
 
 // void if T is Void cvref, else T
 template <class T>
-using unwrap_void = detail::if_c<std::is_same_v<std::remove_cvref_t<T>, Void>, void, T>;
+using unwrap_void = detail::if_c<
+    std::is_same_v<
+        #ifdef __cpp_lib_remove_cvref
+        std::remove_cvref_t<T>,
+        #else
+        std::remove_cv_t<std::remove_reference_t<T>>,
+        #endif
+        Void
+        >, void, T>;
 
 template <class F, class... Args,
           class R = std::invoke_result_t<F, Args...>>
