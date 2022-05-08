@@ -44,21 +44,26 @@ It features the following:
 * a function `vd::invoke` that is similar to `std::invoke` except that:
 
     * it returns `vd::Void` instead of `void`, where appropriate, and
-    * `vd::invoke(f, vd::Void{})` is equivalent to `f()`
+    * `vd::invoke(f, vd::Void{})` is equivalent to `vd::invoke(f)` (regardless of whether `f` is invocable with `vd::Void`)
+
+* a metafunction `vd::void_result_t` that is to `vd::invoke` what `std::invoke_result_t` is to `std::invoke`, except that it still gives you `void` (instead of `Void`). This turns out to be useful when you to implement `Optional<T>::map`, for instance, the new type is `Optional<vd:void_result_t<F, T>>` (i.e. potentially `Optional<void>`, as opposed to `Optional<vd::Void>`).
+
+* (on C++20) a concept `vd::invocable` that is to `vd::invoke` what `std::invocable` is to `std::invoke`
 
 This library allows the above code to be handled as:
 
 ```cpp
 template<class R, class... P, class Callable>
-R invoke_and_log(callable_log<R(P...)>& log, Callable&& callable,
+vd::wrap_void<R> invoke_and_log(
+                 callable_log<R(P...)>& log, Callable&& callable,
                  std::add_rvalue_reference_t<P>... args) {
   log.log_arguments(args...);
-  vd::wrap_void<R> result =
-             vd::invoke(std::forward<Callable>(callable),
-                        std::forward<P>(args)...);
-  // VD_LIFT is a macro that turns a name into a callable
-  // function object. This way if `R` is `void`, this calls
-  // `log.log_result()`
+  vd::wrap_void<R> result = vd::invoke(VD_FWD(callable), VD_FWD(args)...);
+  // either pass result in directly, if passing Void is acceptable
+  log.log_result(result);
+  // Or use vd::invoke again to be able to call log.log_result()
+  // in the void case.
+  // VD_LIFT is a macro that turns a name into a function object.
   vd:invoke([&] VD_LIFT(log.log_result), result);
   return result;
 }
