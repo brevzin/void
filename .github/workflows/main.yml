@@ -33,6 +33,12 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
+    - name: Create Build Environment
+      run: |
+        ${{matrix.install}}
+        sudo apt update
+        sudo apt install locales-all
+
     - name: Configure CMake
       env:
         CXX: ${{matrix.cxx}}
