@@ -19,6 +19,7 @@ namespace Catch {
     template <class T>
     struct StringMaker<type_t<T>> {
         static auto convert(type_t<T>) -> std::string {
+            // From https://stackoverflow.com/a/20170989/2069064
             char const* name = typeid(T).name();
 
             std::unique_ptr<char, decltype(&std::free)> p{

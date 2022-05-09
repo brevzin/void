@@ -44,9 +44,9 @@ It features the following:
 * a function `vd::invoke` that is similar to `std::invoke` except that:
 
     * it returns `vd::Void` instead of `void`, where appropriate, and
-    * `vd::invoke(f, vd::Void{})` is equivalent to `vd::invoke(f)` (regardless of whether `f` is invocable with `vd::Void`)
+    * `vd::invoke(f, vd::Void{})` is equivalent to `vd::invoke(f)` (regardless of whether `f` is invocable with `vd::Void`). See [rationale](#design-rationale).
 
-* a metafunction `vd::void_result_t` that is to `vd::invoke` what `std::invoke_result_t` is to `std::invoke`, except that it still gives you `void` (instead of `Void`). This turns out to be useful when you to implement `Optional<T>::map`, for instance, the new type is `Optional<vd:void_result_t<F, T>>` (i.e. potentially `Optional<void>`, as opposed to `Optional<vd::Void>`).
+* a metafunction `vd::void_result_t` that is to `vd::invoke` what `std::invoke_result_t` is to `std::invoke`, except that it still gives you `void` (instead of `Void`). See [rationale](#design-rationale).
 
 * (on C++20) a concept `vd::invocable` that is to `vd::invoke` what `std::invocable` is to `std::invoke`
 
@@ -68,3 +68,37 @@ vd::wrap_void<R> invoke_and_log(
   return result;
 }
 ```
+
+## Design Rationale
+
+There is basically only one interesting design choice in this library (the rest
+kind just falls out of wanting to solve the problem) and that is having
+`vd::invoke(f, vd::Void{})` be `vd::invoke(f)` rather than actually trying to
+pass an object of type `Void` into the callable.
+
+The reason for this (along with the corresponding unwrap in `vd::void_result_t`)
+is that it ends up being more useful for common use-cases. Such as:
+
+```cpp
+template <class T>
+class Optional {
+    union { vd::wrap_void<T> value_; };
+    bool engaged_;
+
+public:
+    template <class F>
+    auto map(F f) const -> Optional<vd::void_result_t<F&, vd::wrap_void<T> const&>>
+    {
+        if (engaged_) {
+            return vd::invoke(f, value_);
+        } else {
+            return {};
+        }
+    }
+};
+```
+
+For `Optional<void>` (a seemingly pointless, yet nevertheless useful
+specialization), this allows `map` to take a nullary function. And for
+`Optional<T>`, if `F` returns `void`, we get back `Optional<Void>`. Everything
+works out quite nicely.
