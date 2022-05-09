@@ -21,13 +21,13 @@ R invoke_and_log(callable_log<R(P...)>& log, Callable&& callable,
 This is correct for all `R` except `void`. For `void`, specifically, we need dedicated handling:
 
 ```cpp
-if constexpr (std::is_void_v) {
+if constexpr (std::is_void_v<R>) {
     std::invoke(std::forward<Callable>(callable),
                 std::forward<P>(args)...);
     log.log_result();
 } else {
     R result = std::invoke(std::forward<Callable>(callable),
-                            std::forward<P>(args)...);
+                           std::forward<P>(args)...);
     log.log_result(result);
     return result;
 }
@@ -100,5 +100,5 @@ public:
 
 For `Optional<void>` (a seemingly pointless, yet nevertheless useful
 specialization), this allows `map` to take a nullary function. And for
-`Optional<T>`, if `F` returns `void`, we get back `Optional<Void>`. Everything
+`Optional<T>`, if `F` returns `void`, we get back `Optional<void>`. Everything
 works out quite nicely.
