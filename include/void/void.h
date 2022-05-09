@@ -102,21 +102,27 @@ using unwrap_void = detail::if_c<
         Void
         >, void, T>;
 
-template <class F, class... Args,
-          class R = std::invoke_result_t<F, Args...>>
-VD_CONSTEXPR auto invoke(F&& f, Args&&... args) -> wrap_void<R> {
-    if constexpr (not std::is_void_v<R>) {
-        return std::invoke(VD_FWD(f), VD_FWD(args)...);
-    } else {
-        std::invoke(VD_FWD(f), VD_FWD(args)...);
-        return Void{};
-    }
+namespace detail {
+    struct invoke_t {
+        template <class F, class... Args,
+                class R = std::invoke_result_t<F, Args...>>
+        VD_CONSTEXPR auto operator()(F&& f, Args&&... args) const -> wrap_void<R> {
+            if constexpr (not std::is_void_v<R>) {
+                return std::invoke(VD_FWD(f), VD_FWD(args)...);
+            } else {
+                std::invoke(VD_FWD(f), VD_FWD(args)...);
+                return Void{};
+            }
+        }
+
+        template <class F, class R = std::invoke_result_t<F>>
+        VD_CONSTEXPR auto operator()(F&& f, Void ) const -> wrap_void<R> {
+            return (*this)(VD_FWD(f));
+        }
+    };
 }
 
-template <class F, class R = std::invoke_result_t<F>>
-constexpr auto invoke(F&& f, Void ) -> wrap_void<R> {
-    return vd::invoke(VD_FWD(f));
-}
+inline constexpr detail::invoke_t invoke{};
 
 // void-specific version of invoke_result_t that still returns void, not Void
 template <class F, class... Args>
