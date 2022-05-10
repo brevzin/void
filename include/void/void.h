@@ -115,9 +115,27 @@ namespace detail {
             }
         }
 
-        template <class F, class R = std::invoke_result_t<F>>
-        VD_CONSTEXPR auto operator()(F&& f, Void ) const -> wrap_void<R> {
-            return (*this)(VD_FWD(f));
+        // special-case invoke(f, Void()). if f(Void()) isn't a viable call
+        // then call f()
+        template <class F, class Arg, class R = std::invoke_result_t<F>
+            #ifndef __cpp_concepts
+            , std::enable_if_t<
+                std::is_same_v<std::decay_t<Arg>, Void>
+                && !std::is_invocable_v<F, Arg>
+                , int> = 0
+            #endif
+            >
+            #ifdef __cpp_concepts
+            requires std::same_as<std::decay_t<Arg>, Void>
+                  && (!std::invocable<F, Arg>)
+            #endif
+        VD_CONSTEXPR auto operator()(F&& f, Arg&& ) const -> wrap_void<R> {
+            if constexpr (not std::is_void_v<R>) {
+                return VD_FWD(f)();
+            } else {
+                VD_FWD(f)();
+                return Void{};
+            }
         }
     };
 }

@@ -77,3 +77,22 @@ TEST_CASE("invocation") {
     STATIC_REQUIRE(vd::invocable<decltype(get)>);
     #endif
 }
+
+TEST_CASE("nullary priority") {
+    struct X {
+        auto operator()() const -> int { return 0; }
+    };
+
+    struct Y {
+        auto operator()(vd::Void) const -> int { return 1; }
+    };
+
+    struct Z {
+        auto operator()()         const -> int { return 2; }
+        auto operator()(vd::Void) const -> int { return 3; }
+    };
+
+    CHECK(vd::invoke(X{}, vd::Void{}) == 0);
+    CHECK(vd::invoke(Y{}, vd::Void{}) == 1);
+    CHECK(vd::invoke(Z{}, vd::Void{}) == 3);
+}

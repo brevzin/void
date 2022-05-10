@@ -73,8 +73,7 @@ vd::wrap_void<R> invoke_and_log(
 
 There is basically only one interesting design choice in this library (the rest
 kind just falls out of wanting to solve the problem) and that is having
-`vd::invoke(f, vd::Void{})` be `vd::invoke(f)` rather than actually trying to
-pass an object of type `Void` into the callable.
+`vd::invoke(f, vd::Void{})` fallback to trying `f()` if `f(vd::Void{})` is not a valid expression.
 
 The reason for this (along with the corresponding unwrap in `vd::void_result_t`)
 is that it ends up being more useful for common use-cases. Such as:
